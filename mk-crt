@@ -15,7 +15,9 @@ fi
 
 eval set -- "$TEMP"
 
-ALG="rsa"
+. .env
+
+ALG="${DEFAULT_ALG:-'rsa'}"
 MOD="4096"
 while true; do
   case "$1" in
@@ -38,8 +40,6 @@ HOSTNAME=$1
 if [ -z "$HOSTNAME" ]; then
   usage
 fi
-
-. .env
 
 OPENSSLCNF="/tmp/openssl.$.cf"
 
