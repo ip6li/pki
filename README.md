@@ -28,6 +28,19 @@ subject alternative names, which are required for official server certificates.
 
 This script creates a selfsigned CA certificate. Options similar to mk-csr.
 
+# mk-pkcs12
+
+Create from <file>.key, <file>.crt and ca.crt a PKCS#12 keystore. It my be usable to install
+a certificate chain into appliances or for Java applications.
+
+## Options
+
+```
+--name <name>          Friendly name for certificate
+--cafile <ca file>     Use an other CA file, e.g. intermediate CA certificate
+```
+
+
 # PKI
 
 This creates a directory structure for a small PKI if you need a certificaty hierarchy.

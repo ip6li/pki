@@ -1,0 +1,59 @@
+#!/bin/bash
+
+usage() {
+  echo "usage: $0 [<options>] <csr file name>"
+  exit 1
+}
+
+# You must have installed GNU getopt (util-linux), otherwise getopt will fail
+TEMP=$(getopt -o 'n' --long 'name:,cafile:' -n "$0" -- "$@")
+
+if [ $? -ne 0 ] ; then
+  echo "getopt failed..." >&2
+  exit 1
+fi
+
+eval set -- "$TEMP"
+
+while true; do
+  case "$1" in
+    --name ) NAME="$2"; shift 2 ;;
+    --cafile ) CAFILE="$2"; shift 2 ;;
+    -- ) shift; break ;;
+    * ) break ;;
+  esac
+done
+
+. .env
+
+INFILE="$1"
+if [ -z "$INFILE" ]; then
+  usage
+fi
+
+EXT=${INFILE##*.}
+if [ "$EXT" == "key" ] || [ "$EXT" == "crt" ] || [ "$EXT" == "csr" ]  || [ "$EXT" == "pem" ]; then
+  BASENAME=$(basename "${INFILE}" ".${EXT}")
+else
+  BASENAME="$INFILE"
+fi
+KEYFILE="${BASENAME}.key"
+CRTFILE="${BASENAME}.crt"
+if [ -z "${NAME}" ]; then
+  NAME="${BASENAME}"
+fi
+
+if [ -z "$CAFILE" ]; then
+  CAFILE="${CA_CRT}"
+fi
+
+echo "$CAFILE"
+
+OLD_UMASK=$(umask)
+umask 077
+
+CA_NAME="$(openssl x509 -noout -subject -nameopt compat -in "${CAFILE}" | sed -n '/^subject/s/^.*CN=//p')"
+openssl pkcs12 -export -name "${NAME}" -caname "${CA_NAME}" -inkey "${KEYFILE}" -in "${CRTFILE}" -certfile "${CAFILE}" -out "${BASENAME}.p12"
+
+umask $OLD_UMASK
+rm -f "${TMPNAME}"
