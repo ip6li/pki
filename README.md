@@ -13,7 +13,7 @@ This script collection ca be used for
 
 * It does not create CRLs (for now)
 * It does provide a OCSP server.
-* It is is not for use in enterprise environments.
+* It is not for use in enterprise environments.
 
 # mk-csr
 
