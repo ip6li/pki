@@ -2,6 +2,19 @@
 
 This is a simple PKI solution based on Bash and OpenSSL.
 
+# Usecases
+
+This script collection ca be used for
+
+* Developers which want to test their software regarding real life certificate szenarios.
+* Home and SOHO users which wants to get back control about their certificates.
+
+# Limitiations
+
+* It does not create CRLs (for now)
+* It does provide a OCSP server.
+* It is is not for use in enterprise environments.
+
 # mk-csr
 
 This script is for creating PKCS#10 certificate request. It is able to accept
