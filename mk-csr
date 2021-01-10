@@ -6,7 +6,7 @@ usage() {
 }
 
 # You must have installed GNU getopt (util-linux), otherwise getopt will fail
-TEMP=$(getopt -o 'recs' --long 'rsa,prime256v1,secp521r1,client,server,alg:,mod:' -n "$0" -- "$@")
+TEMP=$(getopt -o 'recs' --long 'rsa,prime256v1,secp521r1,client,server,ca,alg:,mod:' -n "$0" -- "$@")
 
 if [ $? != 0 ] ; then
   echo "getopt failed..." >&2
@@ -26,6 +26,7 @@ while true; do
     -e | --prime256v1 ) ALG="prime256v1"; shift ;;
     -c | --client ) MODE="client"; shift ;;
     -s | --server ) MODE="server"; shift ;;
+    --ca ) MODE="ca"; shift ;;
     --secp521r1 ) ALG="secp521r1"; shift ;;
     --alg ) ALG="$2"; shift 2 ;;
     --mod ) MOD="$2"; shift 2 ;;
@@ -417,17 +418,19 @@ ess_cert_id_chain	= no	# Must the ESS cert id chain be included?
 				# (optional, default: no)
 EOF
 
+OLD_UMASK=$(umask)
 umask 077
+KEYFILE="${HOSTNAME}.key"
 REQFILE="${HOSTNAME}.csr"
 
 if [ "$ALG" == "rsa" ]; then
-  openssl req -config "$OPENSSLCNF" -nodes -newkey rsa:$MOD -sha256 -subj "${SUBJ_PREFIX}/CN=${HOSTNAME}" -keyout "${HOSTNAME}.key" -out "${REQFILE}"
+  openssl req -config "${OPENSSLCNF}" -nodes -newkey rsa:${MOD} -sha256 -subj "${SUBJ_PREFIX}/CN=${HOSTNAME}" -keyout "${KEYFILE}" -out "${REQFILE}"
 else
-  openssl ecparam -out "${HOSTNAME}.key" -name ${ALG} -genkey
-  openssl req -new -config "$OPENSSLCNF" -nodes -key "${HOSTNAME}.key" -sha256 -subj "${SUBJ_PREFIX}/CN=${HOSTNAME}" -out "${REQFILE}"
+  openssl ecparam -out "${KEYFILE}" -name ${ALG} -genkey
+  openssl req -new -config "${OPENSSLCNF}" -nodes -key "${KEYFILE}" -sha256 -subj "${SUBJ_PREFIX}/CN=${HOSTNAME}" -out "${REQFILE}"
 fi
 
 chmod 644 "${REQFILE}"
-umask 022
+umask ${OLD_UMASK}
 
-rm -f "$OPENSSLCNF"
+rm -f "${OPENSSLCNF}"

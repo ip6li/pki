@@ -6,7 +6,7 @@ usage() {
 }
 
 # You must have installed GNU getopt (util-linux), otherwise getopt will fail
-TEMP=$(getopt -o 'cs' --long 'client,server' -n "$0" -- "$@")
+TEMP=$(getopt -o 'cs' --long 'client,server,ca,signca:' -n "$0" -- "$@")
 
 if [ $? != 0 ] ; then
   echo "getopt failed..." >&2
@@ -26,6 +26,9 @@ while true; do
       nsCertType="nsCertType = server"
       keyUsage=""
       shift ;;
+    --ca ) MODE="ca"
+      shift ;;
+    --signca ) SIGNING_CA="$2"; shift 2 ;;
     -- ) shift; break ;;
     * ) break ;;
   esac
@@ -40,8 +43,10 @@ if [ -z "$CSR" ]; then
   usage
 fi
 
-declare -a DNS
-DNS=($(openssl req -in "$CSR" -noout -text | grep DNS: | sed 's/,//g' | sed 's/DNS://g'))
+if [ "$MODE" == "server" ]; then
+  declare -a DNS
+  DNS=($(openssl req -in "${CSR}" -noout -text | grep DNS: | sed 's/,//g' | sed 's/DNS://g'))
+fi
 
 cat > "$OPENSSLCNF" <<EOF
 #
@@ -401,7 +406,21 @@ umask 077
 
 BASE=$(basename "$CSR" .csr)
 OUTFILE="${BASE}.crt"
-openssl ca -config "$OPENSSLCNF" -batch -keyfile "$CA_KEY" -cert "$CA_CRT" -in "$CSR" -days $CRT_DAYS -out "${OUTFILE}" -notext
+EXTENSIONS=""
+DAYS="$CRT_DAYS"
+if [ "$MODE" == "ca" ]; then
+  EXTENSIONS="-extensions v3_ca"
+  DAYS="$CA2_DAYS"
+fi
+
+if [ ! -z "$SIGNING_CA" ]; then
+  EXT=${SIGNING_CA##*.}
+  BASENAME=$(basename "${SIGNING_CA}" ".${EXT}")
+  CA_KEY="${BASENAME}.key"
+  CA_CRT="${BASENAME}.crt"
+fi
+
+openssl ca -config "${OPENSSLCNF}" -batch -keyfile "${CA_KEY}" -cert "${CA_CRT}" -in "${CSR}" -days ${DAYS} -out "${OUTFILE}" -notext ${EXTENSIONS}
 
 chmod 644 "${OUTFILE}"
 umask 022
