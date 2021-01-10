@@ -44,5 +44,7 @@ Signs CSR. Options:
 ```
 -c | --client    Sets key usage attributes for a client certificate.
 -s | --server    Sets key usage attributes for a server certificate.
+--ca             Sets key usage attributes for a CA certificate and sets CA=true.
+--signca         Sign with an other CA, e.g. intermediate CA.
 ```
 
